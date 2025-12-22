@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>My Dashboard</h2>
+<p>You are logged in!</p>
+<div class="row">
+    {% for server_id, stats in stats.items() %}
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-body">
+                <h5>Server ID: {{ server_id }}</h5>
+                <p>Usage: {{ stats.used }} / {{ stats.max }}</p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+        <p>No servers assigned to you yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
