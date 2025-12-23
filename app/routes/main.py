@@ -1,35 +1,42 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from app.models import Server, TimeSlot
-# We will create utils.py next, but we reference it here
+from datetime import datetime
+from sqlalchemy import desc
 from app.utils import calculate_user_quota_stats
 
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
 def index():
-    if current_user.is_authenticated:
-        if current_user.is_admin:
-            return redirect(url_for('admin.dashboard'))
-        return redirect(url_for('main.dashboard'))
+    # if current_user.is_authenticated:
+    #     if current_user.is_admin:
+    #         return redirect(url_for('admin.dashboard'))
+    #     return redirect(url_for('main.dashboard'))
     return render_template('main/index.html')
 
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Only show servers assigned to this user
+    # 1. Get Servers assigned to this user
     assigned_servers = current_user.servers.all()
     
     server_stats = {}
-    
     for server in assigned_servers:
-        # Calculate usage stats for the progress bars
         stats = calculate_user_quota_stats(current_user, server)
         server_stats[server.id] = stats
 
+    # 2. [NEW] Get Upcoming Reservations for this user
+    # We filter for slots where start_time is in the future
+    upcoming_reservations = TimeSlot.query.filter(
+        TimeSlot.reserved_by_user_id == current_user.id,
+        TimeSlot.start_time >= datetime.now()
+    ).order_by(TimeSlot.start_time.asc()).all()
+
     return render_template('main/dashboard.html', 
                          servers=assigned_servers, 
-                         stats=server_stats)
+                         stats=server_stats,
+                         reservations=upcoming_reservations) # Pass this to template
 
 @main_bp.route('/profile')
 @login_required

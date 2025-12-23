@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                My Profile
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Username:</div>
+                    <div class="col-sm-8">{{ current_user.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Email:</div>
+                    <div class="col-sm-8">{{ current_user.email }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Position:</div>
+                    <div class="col-sm-8"><span class="badge bg-secondary">{{ current_user.position }}</span></div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Resource Role:</div>
+                    <div class="col-sm-8">{{ current_user.resource_needed }}</div>
+                </div>
+
+                <hr>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('auth.change_password') }}" class="btn btn-warning">Change Password</a>
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

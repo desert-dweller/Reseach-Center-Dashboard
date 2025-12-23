@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">Initialize New Server</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <h5 class="mb-3 text-muted border-bottom pb-2">General Information</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control", placeholder="e.g. DGX-Station-01") }}
+                            {% for error in form.name.errors %}
+                                <div class="text-danger small">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.ip_address.label(class="form-label") }}
+                            {{ form.ip_address(class="form-control", placeholder="e.g. 192.168.1.50") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.location.label(class="form-label") }}
+                        {{ form.location(class="form-control", placeholder="e.g. Lab 304, Rack 2") }}
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-muted border-bottom pb-2">Storage</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.hdd_size.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.hdd_size(class="form-control") }}
+                                <span class="input-group-text">GB</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.ssd_size.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.ssd_size(class="form-control") }}
+                                <span class="input-group-text">GB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-muted border-bottom pb-2">Memory</h5>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            {{ form.ram_size.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.ram_size(class="form-control") }}
+                                <span class="input-group-text">GB</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.vram_size.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.vram_size(class="form-control") }}
+                                <span class="input-group-text">GB</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 mt-4 text-muted border-bottom pb-2">Processing Power</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            {{ form.cpu_model.label(class="form-label") }}
+                            {{ form.cpu_model(class="form-control", placeholder="e.g. AMD Ryzen 9") }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.gpu_model.label(class="form-label") }}
+                            {{ form.gpu_model(class="form-control", placeholder="e.g. NVIDIA RTX 4090") }}
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-success btn-lg") }}
+                        <a href="{{ url_for('admin.list_servers') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

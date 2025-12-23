@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Server Management</h2>
+    <a href="{{ url_for('admin.create_server') }}" class="btn btn-success">Add New Server</a>
+</div>
+
+<div class="row">
+    {% for server in servers %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{{ server.name }}</h5>
+                <h6 class="card-subtitle mb-2 text-muted">{{ server.ip_address }}</h6>
+                <p class="card-text">
+                    <strong>Specs:</strong><br>
+                    CPU: {{ server.cpu_model }}<br>
+                    GPU: {{ server.gpu_model }}<br>
+                    RAM: {{ server.ram_size }}GB
+                </p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0">
+                <a href="{{ url_for('admin.assign_users', server_id=server.id) }}"
+                    class="btn btn-sm btn-outline-primary w-100">Manage Users</a>
+                <a href="{{ url_for('admin.edit_server', server_id=server.id) }}"
+                    class="btn btn-sm btn-outline-secondary">Edit</a>
+                <form action="{{ url_for('admin.delete_server', server_id=server.id) }}" method="POST" class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-danger w-100"
+                        onclick="return confirm('Delete this server?');">Delete Server</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center">
+        <p>No servers found. Create one to get started.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

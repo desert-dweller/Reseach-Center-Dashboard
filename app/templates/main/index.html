@@ -1,7 +1,39 @@
 {% extends "base.html" %}
+
 {% block content %}
-<div class="text-center mt-5">
-    <h1>Welcome to the Server Reservation System</h1>
-    <p>Please login to manage your resources.</p>
+<div class="container text-center mt-5">
+    <div class="p-5 mb-4 bg-light rounded-3 shadow-sm">
+        <h1 class="display-5 fw-bold">Research Computing Center</h1>
+        <p class="col-md-8 fs-4 mx-auto">
+            Welcome to the High Performance Computing reservation system.
+        </p>
+
+        {% if current_user.is_authenticated %}
+        <hr class="my-4">
+        <p>You are currently logged in as <strong>{{ current_user.username }}</strong>.</p>
+
+        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-warning btn-lg px-4 gap-3">
+                Go to Admin Panel
+            </a>
+            {% else %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg px-4 gap-3">
+                View My Dashboard
+            </a>
+            <a href="{{ url_for('reservations.list_servers') }}" class="btn btn-outline-secondary btn-lg px-4">
+                Book a Server
+            </a>
+            {% endif %}
+
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-danger btn-lg px-4">Logout</a>
+        </div>
+
+        {% else %}
+        <div class="mt-4">
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg px-4 me-md-2">Login</a>
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

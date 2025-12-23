@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Admin Dashboard</h2>
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Users Management</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ users_count }} Registered Users</h5>
+                <a href="{{ url_for('admin.list_users') }}" class="btn btn-light">Manage Users</a>
+                <a href="{{ url_for('admin.add_user') }}" class="btn btn-outline-light">Add User</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Server Fleet</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ servers_count }} Active Servers</h5>
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{{ url_for('admin.list_reservations') }}" class="btn btn-dark">
+                        <i class="bi bi-calendar-check"></i> View Master Schedule
+                    </a>
+                    <div class="btn-group">
+                        <a href="{{ url_for('admin.list_servers') }}" class="btn btn-light border">Manage Servers</a>
+                        <a href="{{ url_for('admin.create_server') }}" class="btn btn-outline-light border">Add
+                            Server</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-warning mt-4">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-gear-fill"></i> System Maintenance
+            </div>
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title">Database Backup</h5>
+                    <p class="card-text text-muted small">
+                        Create a timestamped copy of the entire database.
+                    </p>
+                </div>
+
+                <form action="{{ url_for('admin.create_backup') }}" method="POST">
+                    <button type="submit" class="btn btn-outline-dark">
+                        <i class="bi bi-save"></i> Backup Now
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
