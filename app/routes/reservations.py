@@ -35,11 +35,27 @@ def calendar(server_id):
     year = request.args.get("year", today.year, type=int)
     month = request.args.get("month", today.month, type=int)
 
+    # --- NEW RESTRICTION: Block Future Months ---
+    # We allow viewing the current month and past history, but NOT future months.
+    requested_date_start = datetime(year, month, 1)
+    current_month_start = datetime(today.year, today.month, 1)
+
+    if requested_date_start > current_month_start:
+        flash("Access restricted: You cannot view or book slots for future months.", "warning")
+        # Redirect back to the current month
+        return redirect(url_for("reservations.calendar", server_id=server.id))
+    # --------------------------------------------
+
     # Navigation logic
     current_date = datetime(year, month, 1)
     prev_date = current_date - timedelta(days=1)
-    # Getting next month is tricky, easiest way is adding 32 days to the 1st
-    next_date = current_date + timedelta(days=32)
+    
+    # Logic to get next month date
+    # (Even though user can't reach it via UI, we calculate it for template logic safety)
+    if month == 12:
+        next_date = datetime(year + 1, 1, 1)
+    else:
+        next_date = datetime(year, month + 1, 1)
 
     # Fetch slots
     slots = TimeSlot.query.filter(
@@ -51,15 +67,14 @@ def calendar(server_id):
     # Create dictionary for lookup
     days_data = {slot.start_time.day: slot for slot in slots}
 
-    # NEW: Get the matrix of weeks [ [0,0,1,2,3,4,5], [6,7,8...] ]
-    # 0 represents days from the previous/next month
+    # Get the matrix of weeks
     month_days = monthcalendar(year, month)
 
     return render_template(
         "reservations/calendar.html",
         server=server,
         days_data=days_data,
-        month_days=month_days,  # <--- Passing this new data
+        month_days=month_days,
         year=year,
         month=month,
         current_month_name=current_date.strftime("%B"),
@@ -76,32 +91,40 @@ def book_slot(slot_id):
     slot = TimeSlot.query.get_or_404(slot_id)
     target_date = slot.start_time
 
-    slot = TimeSlot.query.get_or_404(slot_id)
-    target_date = slot.start_time
-
     # 1. Check Access
     if slot.server not in current_user.servers:
         flash("Access Denied.", "danger")
         return redirect(url_for("main.dashboard"))
 
+    # --- NEW RESTRICTION: Prevent Booking Future Months ---
+    today_now = datetime.now()
+    # Check if target date is in a future month relative to today
+    if target_date.year > today_now.year or (target_date.year == today_now.year and target_date.month > today_now.month):
+        flash("Booking Failed: Reservations are only open for the current month.", "danger")
+        return redirect(
+            url_for(
+                "reservations.calendar",
+                server_id=slot.server_id,
+                year=today_now.year,
+                month=today_now.month,
+            )
+        )
+    # ----------------------------------------------------
+
     # 2. Check if already taken (and handle cancellation)
     if slot.reserved_by_user_id:
         if slot.reserved_by_user_id == current_user.id:
 
-            # --- NEW PROTECTION: Prevent cancelling past/current reservations ---
-            # We compare the slot's date to today's date.
-            # We assume you cannot cancel "Today" because the resource is already "used" for the day.
-            today = datetime.now().date()
+            # Prevent cancelling past/current reservations
+            today_date = datetime.now().date()
             slot_date = slot.start_time.date()
 
-            if slot_date < today:
-                flash(
-                    "You cannot cancel a reservation that has already passed.", "danger"
-                )
-            elif slot_date == today:
+            if slot_date < today_date:
+                flash("You cannot cancel a reservation that has already passed.", "danger")
+            elif slot_date == today_date:
                 flash("You cannot cancel a reservation for the current day.", "warning")
             else:
-                # Only allow if the date is strictly in the future (Tomorrow onwards)
+                # Cancel logic
                 slot.reserved_by_user_id = None
                 log_action(
                     current_user.id,
@@ -110,8 +133,6 @@ def book_slot(slot_id):
                 )
                 db.session.commit()
                 flash("Reservation Cancelled. Quota restored.", "info")
-
-            # --- END PROTECTION ---
 
         else:
             flash("This day is already reserved.", "danger")
@@ -148,14 +169,10 @@ def book_slot(slot_id):
         )
 
     # 4. Weekly Limit Check (Hard limit: 2 days per week, starting Sunday)
-    # Algorithm: Find the Sunday that started this week
-    # Python weekday(): Mon=0 ... Sun=6
-    # If today is Sun(6), subtract 0. If Mon(0), subtract 1.
     days_to_subtract = (target_date.weekday() + 1) % 7
     start_of_week = target_date - timedelta(days=days_to_subtract)
     end_of_week = start_of_week + timedelta(days=6)
 
-    # Ensure we look at the whole day boundaries
     start_of_week = start_of_week.replace(hour=0, minute=0, second=0)
     end_of_week = end_of_week.replace(hour=23, minute=59, second=59)
 
@@ -180,8 +197,6 @@ def book_slot(slot_id):
             )
         )
 
-    # --- END NEW LIMITS ---
-
     # 5. Book the slot
     slot.reserved_by_user_id = current_user.id
     log_action(
@@ -193,7 +208,7 @@ def book_slot(slot_id):
     flash(f"Successfully reserved {target_date.strftime('%Y-%m-%d')}", "success")
 
     return redirect(
-        url_for(    
+        url_for(
             "reservations.calendar",
             server_id=slot.server_id,
             year=target_date.year,
