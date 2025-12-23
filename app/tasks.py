@@ -17,10 +17,10 @@ def generate_time_slots(app, server_id, days_ahead=30):
         end_date = start_date + timedelta(days=days_ahead)
         
         # 1. Fetch existing slots to avoid duplicates
-        existing_slots = db.session.query(TimeSlot.start_time).filter(
-            TimeSlot.server_id == server.id,
-            TimeSlot.start_time >= start_date,
-            TimeSlot.start_time <= end_date
+        existing_slots = db.session.query(TimeSlot.start_time).filter( # type: ignore
+            TimeSlot.server_id == server.id, # type: ignore
+            TimeSlot.start_time >= start_date, # type: ignore
+            TimeSlot.start_time <= end_date # type: ignore
         ).all()
         
         existing_set = {slot[0] for slot in existing_slots}

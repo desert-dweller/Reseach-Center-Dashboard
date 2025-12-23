@@ -4,11 +4,12 @@ from datetime import datetime, timedelta, date
 from sqlalchemy import extract
 from app import db
 from app.models import Server, TimeSlot
-from app.utils import calculate_user_quota_stats
+from app.utils import calculate_user_quota_stats, log_action
 from calendar import monthcalendar
 
 reservations_bp = Blueprint("reservations", __name__)
 MONTHLY_LIMIT = 8
+
 
 @reservations_bp.route("/reserve", methods=["GET"])
 @login_required
@@ -42,9 +43,9 @@ def calendar(server_id):
 
     # Fetch slots
     slots = TimeSlot.query.filter(
-        TimeSlot.server_id == server.id,
-        extract("year", TimeSlot.start_time) == year,
-        extract("month", TimeSlot.start_time) == month,
+        TimeSlot.server_id == server.id,  # type: ignore
+        extract("year", TimeSlot.start_time) == year,  # type: ignore
+        extract("month", TimeSlot.start_time) == month,  # type: ignore
     ).all()
 
     # Create dictionary for lookup
@@ -102,6 +103,11 @@ def book_slot(slot_id):
             else:
                 # Only allow if the date is strictly in the future (Tomorrow onwards)
                 slot.reserved_by_user_id = None
+                log_action(
+                    current_user.id,
+                    "CANCEL_SLOT",
+                    f"Cancelled reservation for {slot.server.name} on {target_date.strftime('%Y-%m-%d')}",
+                )
                 db.session.commit()
                 flash("Reservation Cancelled. Quota restored.", "info")
 
@@ -121,10 +127,10 @@ def book_slot(slot_id):
 
     # 3. Monthly Limit Check (Hard limit: 8 days per month)
     monthly_count = TimeSlot.query.filter(
-        TimeSlot.server_id == slot.server_id,
+        TimeSlot.server_id == slot.server_id,  # type: ignore
         TimeSlot.reserved_by_user_id == current_user.id,
-        extract("year", TimeSlot.start_time) == target_date.year,
-        extract("month", TimeSlot.start_time) == target_date.month,
+        extract("year", TimeSlot.start_time) == target_date.year,  # type: ignore
+        extract("month", TimeSlot.start_time) == target_date.month,  # type: ignore
     ).count()
 
     if monthly_count >= MONTHLY_LIMIT:
@@ -154,10 +160,10 @@ def book_slot(slot_id):
     end_of_week = end_of_week.replace(hour=23, minute=59, second=59)
 
     weekly_count = TimeSlot.query.filter(
-        TimeSlot.server_id == slot.server_id,
+        TimeSlot.server_id == slot.server_id,  # type: ignore
         TimeSlot.reserved_by_user_id == current_user.id,
-        TimeSlot.start_time >= start_of_week,
-        TimeSlot.start_time <= end_of_week,
+        TimeSlot.start_time >= start_of_week,  # type: ignore
+        TimeSlot.start_time <= end_of_week,  # type: ignore
     ).count()
 
     if weekly_count >= 2:
@@ -178,11 +184,16 @@ def book_slot(slot_id):
 
     # 5. Book the slot
     slot.reserved_by_user_id = current_user.id
+    log_action(
+        current_user.id,
+        "BOOK_SLOT",
+        f"Reserved {slot.server.name} for {target_date.strftime('%Y-%m-%d')}",
+    )
     db.session.commit()
     flash(f"Successfully reserved {target_date.strftime('%Y-%m-%d')}", "success")
 
     return redirect(
-        url_for(
+        url_for(    
             "reservations.calendar",
             server_id=slot.server_id,
             year=target_date.year,

@@ -1,9 +1,11 @@
-from sqlalchemy import extract
-from datetime import datetime
-from app.models import TimeSlot
 import os
 import shutil
+from datetime import datetime
 from flask import current_app
+from sqlalchemy import extract
+
+from app import db 
+from app.models import TimeSlot, AuditLog
 
 
 def calculate_user_quota_stats(user, server):
@@ -17,10 +19,10 @@ def calculate_user_quota_stats(user, server):
 
     # 1. Calculate Usage (Count reserved slots in CURRENT MONTH only)
     used_quota = TimeSlot.query.filter(
-        TimeSlot.server_id == server.id,
+        TimeSlot.server_id == server.id, # type: ignore
         TimeSlot.reserved_by_user_id == user.id,
-        extract("year", TimeSlot.start_time) == now.year,
-        extract("month", TimeSlot.start_time) == now.month,
+        extract("year", TimeSlot.start_time) == now.year, # type: ignore
+        extract("month", TimeSlot.start_time) == now.month, # type: ignore
     ).count()
 
     # 2. Calculate Percentage
@@ -79,3 +81,16 @@ def backup_database():
         return backup_filename, None
     except Exception as e:
         return None, str(e)
+
+
+def log_action(user_id, action, details):
+    """
+    Records an event to the Audit Log.
+    """
+    try:
+        log = AuditLog(user_id=user_id, action=action, details=details)
+        db.session.add(log)
+        db.session.commit()
+    except Exception as e:
+        print(f"Logging Failed: {e}")
+        # We don't want logging errors to crash the main app, so we just print it

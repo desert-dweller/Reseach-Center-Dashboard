@@ -10,5 +10,5 @@ scheduler = APScheduler()
 
 # Setup Login Manager
 login_manager = LoginManager()
-login_manager.login_view = 'auth.login' # Blueprint-style reference
+login_manager.login_view = 'auth.login' # type: ignore
 login_manager.login_message_category = 'info'

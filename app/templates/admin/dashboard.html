@@ -1,54 +1,108 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h2>Admin Dashboard</h2>
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Users Management</div>
-            <div class="card-body">
-                <h5 class="card-title">{{ users_count }} Registered Users</h5>
-                <a href="{{ url_for('admin.list_users') }}" class="btn btn-light">Manage Users</a>
-                <a href="{{ url_for('admin.add_user') }}" class="btn btn-outline-light">Add User</a>
-            </div>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5 border-bottom pb-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Admin Dashboard</h2>
+            <span class="text-muted small">System Overview</span>
+        </div>
+        <div>
+            <span class="badge bg-dark px-3 py-2 rounded-pill">
+                <i class="bi bi-wifi"></i> System Online
+            </span>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-header">Server Fleet</div>
-            <div class="card-body">
-                <h5 class="card-title">{{ servers_count }} Active Servers</h5>
-                <div class="d-grid gap-2 mt-3">
-                    <a href="{{ url_for('admin.list_reservations') }}" class="btn btn-dark">
-                        <i class="bi bi-calendar-check"></i> View Master Schedule
-                    </a>
-                    <div class="btn-group">
-                        <a href="{{ url_for('admin.list_servers') }}" class="btn btn-light border">Manage Servers</a>
-                        <a href="{{ url_for('admin.create_server') }}" class="btn btn-outline-light border">Add
-                            Server</a>
+
+    <div class="card shadow-sm mb-4 border-0 border-start border-primary border-5 transition-hover">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="rounded-3 bg-primary text-white d-flex align-items-center justify-content-center"
+                        style="width: 60px; height: 60px;">
+                        <i class="bi bi-people-fill fs-3"></i>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div class="card border-warning mt-4">
-            <div class="card-header bg-warning text-dark">
-                <i class="bi bi-gear-fill"></i> System Maintenance
-            </div>
-            <div class="card-body d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="card-title">Database Backup</h5>
-                    <p class="card-text text-muted small">
-                        Create a timestamped copy of the entire database.
+                <div class="col ms-2">
+                    <h5 class="fw-bold text-primary mb-1">User Management</h5>
+                    <p class="text-muted mb-0 small">
+                        Manage researchers and quotas.
+                        <span class="fw-bold text-dark mx-2">&bull;</span>
+                        {{ users_count|default('0') }} Registered
                     </p>
                 </div>
-
-                <form action="{{ url_for('admin.create_backup') }}" method="POST">
-                    <button type="submit" class="btn btn-outline-dark">
-                        <i class="bi bi-save"></i> Backup Now
-                    </button>
-                </form>
+                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                    <a href="{{ url_for('admin.list_users') }}" class="btn btn-outline-primary">Manage Users</a>
+                    <a href="{{ url_for('admin.add_user') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg"></i> Add New
+                    </a>
+                </div>
             </div>
         </div>
     </div>
+
+    <div class="card shadow-sm mb-4 border-0 border-start border-success border-5 transition-hover">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="rounded-3 bg-success text-white d-flex align-items-center justify-content-center"
+                        style="width: 60px; height: 60px;">
+                        <i class="bi bi-hdd-rack-fill fs-3"></i>
+                    </div>
+                </div>
+                <div class="col ms-2">
+                    <h5 class="fw-bold text-success mb-1">Server Fleet</h5>
+                    <p class="text-muted mb-0 small">
+                        Monitor hardware & availability.
+                        <span class="fw-bold text-dark mx-2">&bull;</span>
+                        {{ servers_count|default('0') }} Active
+                    </p>
+                </div>
+                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                    <a href="{{ url_for('admin.list_reservations') }}" class="btn btn-dark me-2">
+                        <i class="bi bi-calendar3"></i> Master Schedule
+                    </a>
+                    <div class="btn-group">
+                        <a href="{{ url_for('admin.list_servers') }}" class="btn btn-outline-success me-1">Manage
+                            Servers</a>
+                        <a href="{{ url_for('admin.create_server') }}" class="btn btn-success">
+                            <i class="bi bi-plus-lg"></i>Add New
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0 border-start border-warning border-5 transition-hover">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <div class="rounded-3 bg-warning text-dark d-flex align-items-center justify-content-center"
+                        style="width: 60px; height: 60px;">
+                        <i class="bi bi-shield-lock-fill fs-3"></i>
+                    </div>
+                </div>
+                <div class="col ms-2">
+                    <h5 class="fw-bold text-dark mb-1">System Maintenance</h5>
+                    <p class="text-muted mb-0 small">
+                        Security audits & data backups.
+                    </p>
+                </div>
+                <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex align-items-center justify-content-md-end gap-3">
+                    <a href="{{ url_for('admin.view_logs') }}" class="text-decoration-none text-muted fw-bold small">
+                        <i class="bi bi-list-columns"></i> View Logs
+                    </a>
+                    <form action="{{ url_for('admin.create_backup') }}" method="POST" class="d-inline">
+                        <button type="submit" class="btn btn-warning text-dark px-4 fw-bold">
+                            <i class="bi bi-save"></i> Backup DB
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

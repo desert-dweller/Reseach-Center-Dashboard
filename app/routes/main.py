@@ -1,3 +1,4 @@
+# app/routes/main.py
 from flask import Blueprint, render_template, redirect, url_for
 from flask_login import login_required, current_user
 from app.models import Server, TimeSlot
@@ -26,17 +27,16 @@ def dashboard():
         stats = calculate_user_quota_stats(current_user, server)
         server_stats[server.id] = stats
 
-    # 2. [NEW] Get Upcoming Reservations for this user
-    # We filter for slots where start_time is in the future
+    # 2. Get Upcoming Reservations for this user
     upcoming_reservations = TimeSlot.query.filter(
         TimeSlot.reserved_by_user_id == current_user.id,
-        TimeSlot.start_time >= datetime.now()
-    ).order_by(TimeSlot.start_time.asc()).all()
+        TimeSlot.start_time >= datetime.now() # type: ignore
+    ).order_by(TimeSlot.start_time.asc()).all() # type: ignore
 
     return render_template('main/dashboard.html', 
-                         servers=assigned_servers, 
-                         stats=server_stats,
-                         reservations=upcoming_reservations) # Pass this to template
+                          servers=assigned_servers, 
+                          stats=server_stats,
+                          reservations=upcoming_reservations)
 
 @main_bp.route('/profile')
 @login_required

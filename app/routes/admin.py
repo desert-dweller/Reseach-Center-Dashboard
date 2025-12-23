@@ -5,11 +5,11 @@ from datetime import datetime
 from sqlalchemy import text
 
 from app import db
-from app.models import User, Server, user_server, TimeSlot
+from app.models import User, Server, user_server, TimeSlot, AuditLog
 from app.forms import AddUserForm, EditUserForm, ServerForm
 
 from app.tasks import generate_time_slots
-from app.utils import calculate_user_quota_stats, backup_database
+from app.utils import calculate_user_quota_stats, backup_database, log_action
 
 from calendar import monthcalendar
 from sqlalchemy import extract
@@ -62,7 +62,7 @@ def add_user():
         new_user = User(
             username=form.username.data,
             email=form.email.data,
-            password=generate_password_hash(form.password.data),
+            password=generate_password_hash(form.password.data or ""),
             position=form.position.data,
             resource_needed=form.resource_needed.data,
             ratio=user_ratio,
@@ -71,6 +71,7 @@ def add_user():
 
         try:
             db.session.add(new_user)
+            log_action(current_user.id, "CREATE_USER", f"Created user {new_user.username} as {new_user.position}")
             db.session.commit()
             flash(
                 f"User {new_user.username} created successfully as {form.position.data}.",
@@ -100,6 +101,11 @@ def delete_user(user_id):
                 )
 
             db.session.delete(user)
+            log_action(
+                current_user.id,
+                "DELETE_USER",
+                f"Deleted user {user.username} (ID: {user_id})",
+            )
             db.session.commit()
             flash(f"User {user.username} has been permanently deleted.", "success")
         except Exception as e:
@@ -330,13 +336,13 @@ def list_reservations(year, month):
     # We join with Server and User to make accessing their names easy
     slots = (
         TimeSlot.query.filter(
-            extract("year", TimeSlot.start_time) == year,
-            extract("month", TimeSlot.start_time) == month,
-            TimeSlot.reserved_by_user_id.isnot(None),  # Only get booked slots
+            extract("year", TimeSlot.start_time) == year, # type: ignore
+            extract("month", TimeSlot.start_time) == month, # type: ignore
+            TimeSlot.reserved_by_user_id != (None),  # noqa: E711
         )
         .join(Server)
         .join(User)
-        .order_by(TimeSlot.start_time.asc())
+        .order_by(TimeSlot.start_time.asc()) # type: ignore
         .all()
     )
 
@@ -377,6 +383,7 @@ def force_cancel_reservation(slot_id):
 
         # Admin Override: Remove the user
         slot.reserved_by_user_id = None
+        log_action(current_user.id, "ADMIN_REVOKE", f"Revoked reservation for {user_name} on {date_str}")
         db.session.commit()
 
         flash(
@@ -397,3 +404,10 @@ def create_backup():
         flash(f"Backup Failed: {error}", "danger")
 
     return redirect(url_for("admin.dashboard"))
+
+@admin_bp.route('/logs')
+@login_required
+def view_logs():
+    # Show newest logs first, limit to last 100 entries
+    logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(100).all()
+    return render_template('admin/logs.html', logs=logs)

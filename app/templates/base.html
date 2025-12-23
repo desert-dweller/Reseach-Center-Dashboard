@@ -27,7 +27,6 @@
                     <a class="nav-item nav-link text-warning" href="{{ url_for('admin.dashboard') }}">Admin Panel</a>
                     {% else %}
                     <a class="nav-item nav-link" href="{{ url_for('main.dashboard') }}">My Dashboard</a>
-                    <a class="nav-item nav-link" href="{{ url_for('reservations.list_servers') }}">Reserve</a>
                     {% endif %}
 
                     <a class="nav-item nav-link text-danger" href="{{ url_for('auth.logout') }}">Logout</a>

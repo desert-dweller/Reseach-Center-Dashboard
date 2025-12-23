@@ -1,3 +1,4 @@
+# app/routes/auth.py
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -19,7 +20,7 @@ def login():
         user = User.query.filter_by(username=form.username.data).first()
         
         # Security Check: Verify user exists AND password is correct
-        if user and check_password_hash(user.password, form.password.data):
+        if user and check_password_hash(user.password, form.password.data or ""):
             login_user(user)
             flash(f'Welcome back, {user.username}!', 'success')
             
@@ -46,9 +47,9 @@ def logout():
 def change_password():
     form = ChangePasswordForm()
     if form.validate_on_submit():
-        if check_password_hash(current_user.password, form.old_password.data):
+        if check_password_hash(current_user.password, form.old_password.data or ""):
             # Hash the new password before saving
-            hashed_password = generate_password_hash(form.new_password.data)
+            hashed_password = generate_password_hash(form.new_password.data or "")
             current_user.password = hashed_password
             db.session.commit()
             flash('Your password has been updated!', 'success')
