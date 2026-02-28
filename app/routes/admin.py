@@ -71,7 +71,11 @@ def add_user():
 
         try:
             db.session.add(new_user)
-            log_action(current_user.id, "CREATE_USER", f"Created user {new_user.username} as {new_user.position}")
+            log_action(
+                current_user.id,
+                "CREATE_USER",
+                f"Created user {new_user.username} as {new_user.position}",
+            )
             db.session.commit()
             flash(
                 f"User {new_user.username} created successfully as {form.position.data}.",
@@ -336,13 +340,13 @@ def list_reservations(year, month):
     # We join with Server and User to make accessing their names easy
     slots = (
         TimeSlot.query.filter(
-            extract("year", TimeSlot.start_time) == year, # type: ignore
-            extract("month", TimeSlot.start_time) == month, # type: ignore
+            extract("year", TimeSlot.start_time) == year,  # type: ignore
+            extract("month", TimeSlot.start_time) == month,  # type: ignore
             TimeSlot.reserved_by_user_id != (None),  # noqa: E711
         )
         .join(Server)
         .join(User)
-        .order_by(TimeSlot.start_time.asc()) # type: ignore
+        .order_by(TimeSlot.start_time.asc())  # type: ignore
         .all()
     )
 
@@ -383,7 +387,11 @@ def force_cancel_reservation(slot_id):
 
         # Admin Override: Remove the user
         slot.reserved_by_user_id = None
-        log_action(current_user.id, "ADMIN_REVOKE", f"Revoked reservation for {user_name} on {date_str}")
+        log_action(
+            current_user.id,
+            "ADMIN_REVOKE",
+            f"Revoked reservation for {user_name} on {date_str}",
+        )
         db.session.commit()
 
         flash(
@@ -405,9 +413,67 @@ def create_backup():
 
     return redirect(url_for("admin.dashboard"))
 
-@admin_bp.route('/logs')
+
+@admin_bp.route("/logs")
 @login_required
 def view_logs():
     # Show newest logs first, limit to last 100 entries
     logs = AuditLog.query.order_by(AuditLog.timestamp.desc()).limit(100).all()
-    return render_template('admin/logs.html', logs=logs)
+    return render_template("admin/logs.html", logs=logs)
+
+
+# In app/routes/admin.py
+
+# ... existing imports ...
+from app.models import User, Server, user_server  # Ensure user_server is imported
+
+
+@admin_bp.route("/server/<int:server_id>/users", methods=["GET", "POST"])
+@login_required
+def manage_server_users(server_id):
+    if not current_user.is_admin:
+        flash("Access denied.", "danger")
+        return redirect(url_for("main.dashboard"))
+
+    server = Server.query.get_or_404(server_id)
+
+    # Handle "Add User" Form Submission
+    if request.method == "POST":
+        username = request.form.get("username")
+        user = User.query.filter_by(username=username).first()
+
+        if user:
+            if user not in server.users:
+                server.users.append(user)
+                db.session.commit()
+                flash(f"{user.username} added to {server.name}.", "success")
+            else:
+                flash(f"{user.username} is already assigned to this server.", "warning")
+        else:
+            flash("User not found.", "danger")
+
+        return redirect(url_for("admin.manage_server_users", server_id=server_id))
+
+    # Get all users (for the dropdown selection)
+    all_users = User.query.all()
+
+    return render_template(
+        "admin/manage_server_users.html", server=server, all_users=all_users
+    )
+
+
+@admin_bp.route("/server/<int:server_id>/remove_user/<int:user_id>")
+@login_required
+def remove_user_from_server(server_id, user_id):
+    if not current_user.is_admin:
+        return redirect(url_for("main.dashboard"))
+
+    server = Server.query.get_or_404(server_id)
+    user = User.query.get_or_404(user_id)
+
+    if user in server.users:
+        server.users.remove(user)
+        db.session.commit()
+        flash(f"Removed {user.username} from {server.name}.", "success")
+
+    return redirect(url_for("admin.manage_server_users", server_id=server_id))

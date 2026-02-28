@@ -1,40 +1,82 @@
 {% extends "base.html" %}
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Server Management</h2>
-    <a href="{{ url_for('admin.create_server') }}" class="btn btn-success">Add New Server</a>
-</div>
 
-<div class="row">
-    {% for server in servers %}
-    <div class="col-md-4 mb-4">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">{{ server.name }}</h5>
-                <h6 class="card-subtitle mb-2 text-muted">{{ server.ip_address }}</h6>
-                <p class="card-text">
-                    <strong>Specs:</strong><br>
-                    CPU: {{ server.cpu_model }}<br>
-                    GPU: {{ server.gpu_model }}<br>
-                    RAM: {{ server.ram_size }}GB
-                </p>
-            </div>
-            <div class="card-footer bg-transparent border-top-0">
-                <a href="{{ url_for('admin.assign_users', server_id=server.id) }}"
-                    class="btn btn-sm btn-outline-primary w-100">Manage Users</a>
-                <a href="{{ url_for('admin.edit_server', server_id=server.id) }}"
-                    class="btn btn-sm btn-outline-secondary">Edit</a>
-                <form action="{{ url_for('admin.delete_server', server_id=server.id) }}" method="POST" class="mt-2">
-                    <button type="submit" class="btn btn-sm btn-danger w-100"
-                        onclick="return confirm('Delete this server?');">Delete Server</button>
-                </form>
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-5 border-bottom pb-3">
+        <div>
+            <h2 class="fw-bold text-dark mb-0">Server Fleet Management</h2>
+            <p class="text-muted small mb-0">Monitor hardware and manage researcher access.</p>
+        </div>
+        <a href="{{ url_for('admin.create_server') }}" class="btn btn-success shadow-sm">
+            <i class="bi bi-plus-lg me-1"></i> Add New Server
+        </a>
+    </div>
+
+    {% if servers %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for server in servers %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 transition-hover">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0 d-flex justify-content-between align-items-start">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">{{ server.name }}</h5>
+                        <span class="badge bg-light text-primary border border-primary-subtle">
+                            <i class="bi bi-hdd-network me-1"></i> {{ server.ip_address }}
+                        </span>
+                    </div>
+                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2" title="Assigned Users">
+                        <i class="bi bi-people-fill me-1"></i> {{ server.users|length }} Users
+                    </span>
+                </div>
+
+                <div class="card-body">
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center mb-2 text-muted small">
+                            <i class="bi bi-cpu fs-5 me-2 text-secondary" style="width: 20px;"></i>
+                            <span class="text-truncate" title="{{ server.cpu_model }}">{{ server.cpu_model }}</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2 text-muted small">
+                            <i class="bi bi-gpu-card fs-5 me-2 text-secondary" style="width: 20px;"></i>
+                            <span class="text-truncate" title="{{ server.gpu_model }}">{{ server.gpu_model }}</span>
+                        </div>
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="bi bi-memory fs-5 me-2 text-secondary" style="width: 20px;"></i>
+                            <span>{{ server.ram_size }} GB RAM</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light border-top-0 p-3">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.assign_users', server_id=server.id) }}" class="btn btn-primary btn-sm fw-bold">
+                            <i class="bi bi-person-gear me-1"></i> Manage Users
+                        </a>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('admin.edit_server', server_id=server.id) }}" class="btn btn-outline-secondary btn-sm flex-grow-1">
+                                <i class="bi bi-pencil"></i> Edit
+                            </a>
+                            
+                            <form action="{{ url_for('admin.delete_server', server_id=server.id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure? This will delete all reservations associated with this server.');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
+        {% endfor %}
     </div>
     {% else %}
-    <div class="col-12 text-center">
-        <p>No servers found. Create one to get started.</p>
-    </div>
-    {% endfor %}
+        <div class="text-center py-5">
+            <div class="mb-3 text-muted opacity-25">
+                <i class="bi bi-server" style="font-size: 4rem;"></i>
+            </div>
+            <h5 class="text-muted">No servers found</h5>
+            <p class="text-muted small">Add your first server to start managing resources.</p>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
